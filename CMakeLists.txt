@@ -7,6 +7,7 @@ project("Starlight")
 
 ## Vulkan
 find_package(Vulkan REQUIRED)
+find_package(Threads REQUIRED)
 
 ## GLSL C
 find_program(glslc_EXECUTABLE NAMES glslc HINTS Vulkan::glslc)
@@ -15,11 +16,82 @@ if (NOT glslc_EXECUTABLE)
 	message(FATAL_ERROR "glslc executable not found. Please ensure that the Vulkan SDK is properly installed and that glslc is in your PATH.")
 endif()
 
+## Third party
+include(FetchContent)
+
+# Tracy 
+FetchContent_Declare(
+    tracy
+    GIT_REPOSITORY https://github.com/wolfpld/tracy.git 
+    GIT_TAG v0.13.1
+    GIT_SHALLOW TRUE
+)
+set(TRACY_ENABLE ${MIDORI_ENABLE_PROFILING})
+set(TRACY_ON_DEMAND ${MIDORI_ENABLE_PROFILING})
+
+# GLM
+FetchContent_Declare(
+    glm
+    GIT_REPOSITORY https://github.com/icaven/glm
+	GIT_SHALLOW TRUE
+)
+
+# GLFW
+FetchContent_Declare(
+    glfw
+    GIT_REPOSITORY https://github.com/glfw/glfw
+	GIT_SHALLOW TRUE
+)
+
+# VMA 
+FetchContent_Declare(
+    vma
+    GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
+    GIT_TAG v3.3.0
+    GIT_SHALLOW TRUE
+)
+# Disable VMA sample builds by default
+set(VMA_BUILD_SAMPLES OFF)
+
+# ImGui
+FetchContent_Declare(
+    imgui
+    GIT_REPOSITORY https://github.com/ocornut/imgui
+	GIT_TAG v1.92.7
+	GIT_SHALLOW TRUE
+)
+
+FetchContent_MakeAvailable(tracy glm glfw vma imgui)
+
+## ImGui as static lib
+add_library(imgui 
+    "${imgui_SOURCE_DIR}/imgui.cpp" 
+    "${imgui_SOURCE_DIR}/imgui_demo.cpp"
+    "${imgui_SOURCE_DIR}/imgui_draw.cpp" 
+    "${imgui_SOURCE_DIR}/imgui_tables.cpp" 
+    "${imgui_SOURCE_DIR}/imgui_widgets.cpp" 
+    "${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp"
+    "${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp"
+)
+target_link_libraries(imgui PRIVATE 
+    glfw Vulkan::Vulkan
+)
+target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR})
+
+## Exe
 add_executable(${PROJECT_NAME}
 	main.cpp
 )
 
-target_link_libraries(${PROJECT_NAME} Vulkan::Vulkan)
+target_link_libraries(${PROJECT_NAME} 
+    Vulkan::Vulkan
+    Threads::Threads
+    VulkanMemoryAllocator
+    glm
+    glfw
+    imgui
+    TracyClient
+)
 
 add_custom_command(TARGET ${PROJECT_NAME} 
 	PRE_BUILD
