@@ -1,17 +1,22 @@
 #include <cstdio>
 
 #include "../Include/Logger.h"
+#include "../Include/Utility.h"
+#include "../Include/Gpu.h"
 
 #include <vulkan/vulkan.h>
 
 int main(int argc, const char** argv)
 {
-	VkInstanceCreateInfo createInfo = {};
+	Starlight::Logger::Log(Starlight::eLogLevel::Info, "Starlight...\n");
 
-	Starlight::Logger::Log(Starlight::eLogLevel::Info, "Starlight is not a problem\n");
-	Starlight::Logger::Log(Starlight::eLogLevel::Warning, "Starlight is maybe a problem\n");
+	Starlight::GpuInfo gpuInfo = {};
+	gpuInfo.appName = "Starlight";
+	gpuInfo.appVersion = PACK_VERSION(0, 1, 0);
 
-	Starlight::Logger::Error(__FILE__, __LINE__, __PRETTY_FUNCTION__, "Starlight is a problem\n");
+	Starlight::Gpu gpu;
+
+	Starlight::CheckError(gpu.Init(&gpuInfo));
 
 	return 0;
 }
