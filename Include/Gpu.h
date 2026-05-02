@@ -21,18 +21,47 @@ namespace Starlight
 		std::string appName;
 		uint32_t appVersion;
 
-
+		bool enableValidationLayers;
 	};
 
 	class Gpu
 	{
 	public:
 
-		StarlightErr Init(const GpuInfo* pGpuInfo);
+		Gpu();
+
+		StarlightErr Init(GpuInfo* pGpuInfo);
 
 		StarlightErr Terminate();
 
 	private:
+
+		VkResult CheckVkResult(const VkResult result, const char* msg);
+
+		VkResult LoadVulkanFunctions();
+
+		VkResult CreateInstance(const GpuInfo* pGpuInfo);
+		void DestroyInstance();
+
+		VkResult SelectPhysicalDevice();
+		void DestroyPhysicalDevice();
+
+		VkResult CreateLogicalDevice();
+		void DestroyLogicalDevice();
+
+		VkResult CreateVmaAllocator();
+		void DestroyVmaAllocator();
+
+		VkResult CreateDebugMessenger();
+		void DestroyDebugMessenger();
+
+		VkResult SetDebugObjectName(const uint64_t handle, const VkObjectType type, const std::string& name) const;
+
+		static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
+
+	private:
+
+
 
 		VkInstance instance;		
 		VkPhysicalDevice physicalDevice;
@@ -41,6 +70,14 @@ namespace Starlight
 		VkDebugUtilsMessengerEXT debugMessenger;
 
 		VmaAllocator allocator;
+		VkAllocationCallbacks* allocatorCallback;
+
+		GpuInfo* pGpuInfo;
+
+
+		static PFN_vkCreateDebugUtilsMessengerEXT  vkCreateDebugUtilsMessengerEXT;
+		static PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT;
+		static PFN_vkSetDebugUtilsObjectNameEXT    vkSetDebugUtilsObjectNameEXT;
 	};
 }
 

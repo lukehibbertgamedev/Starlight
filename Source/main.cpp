@@ -13,10 +13,16 @@ int main(int argc, const char** argv)
 	Starlight::GpuInfo gpuInfo = {};
 	gpuInfo.appName = "Starlight";
 	gpuInfo.appVersion = PACK_VERSION(0, 1, 0);
+	gpuInfo.enableValidationLayers = true;
 
 	Starlight::Gpu gpu;
 
 	Starlight::CheckError(gpu.Init(&gpuInfo));
+
+	// render probably.
+
+
+	//Starlight::CheckError(gpu.Terminate());
 
 	return 0;
 }
