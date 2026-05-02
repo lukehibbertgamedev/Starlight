@@ -73,6 +73,7 @@ add_library(imgui
     "${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp"
     "${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp"
 )
+
 target_link_libraries(imgui PRIVATE 
     glfw Vulkan::Vulkan
 )
@@ -80,8 +81,9 @@ target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR})
 
 ## Exe
 add_executable(${PROJECT_NAME}
-	main.cpp
-)
+"Source/main.cpp"
+"Include/Errors.h"
+ "Include/Logger.h" "Source/Logger.cpp")
 
 target_link_libraries(${PROJECT_NAME} 
     Vulkan::Vulkan
