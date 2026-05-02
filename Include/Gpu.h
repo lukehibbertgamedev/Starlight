@@ -44,6 +44,7 @@ namespace Starlight
 		void DestroyInstance();
 
 		VkResult SelectPhysicalDevice();
+		bool CheckPhysicalDeviceSuitability();
 		void DestroyPhysicalDevice();
 
 		VkResult CreateLogicalDevice();

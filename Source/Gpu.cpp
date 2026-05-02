@@ -60,6 +60,10 @@ namespace Starlight
 			Logger::Log(Starlight::eLogLevel::Info, "Created debug messenger\n");
         }
 
+		err = (StarlightErr)CheckVkResult(SelectPhysicalDevice(), "SelectPhysicalDevice");
+		Logger::Log(Starlight::eLogLevel::Info, "Selected physical device\n");
+
+
         return StarlightErr::Success;
     }
 
@@ -176,9 +180,107 @@ namespace Starlight
 
     VkResult Gpu::SelectPhysicalDevice()
     {
-        return VkResult();
-    }
+		uint32_t deviceCount = 0;
+        vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
+        if (deviceCount <= 0)
+        {
+            Logger::Error(__FILE__, __LINE__, __PRETTY_FUNCTION__, "No physical devices found\n");
+			return VK_ERROR_FEATURE_NOT_PRESENT;
+        }
+
+		std::vector<VkPhysicalDevice> devices(deviceCount);
+        vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+
+		VkPhysicalDeviceFeatures requiredFeatures = {}; 
+        
+
+        //Prefer Discrete GPUs -> Integrated GPUs -> CPUs -> Software Driver
+        //Require Vulkan 1.0 support. 
+        VkPhysicalDevice deviceCandidate = VK_NULL_HANDLE;
+        VkPhysicalDeviceType candidateType = VK_PHYSICAL_DEVICE_TYPE_MAX_ENUM;
+        {
+            for (const VkPhysicalDevice device : devices)
+            {
+                //Query the Physical Device Properties for the relevant information. 
+                VkPhysicalDeviceProperties deviceProperties = {};
+                vkGetPhysicalDeviceProperties(device, &deviceProperties);
+
+                //Skip any devices that don't support Vulkan 1.2
+                if (deviceProperties.apiVersion < VK_API_VERSION_1_2) {
+                    Logger::Log(eLogLevel::Info, "Device [%s](%s) Skipped: Vulkan API Version (%d.%d.%d) was unsupported!\n", deviceProperties.deviceName, string_VkPhysicalDeviceType(deviceProperties.deviceType), VK_API_VERSION_MAJOR(deviceProperties.apiVersion), VK_API_VERSION_MINOR(deviceProperties.apiVersion), VK_API_VERSION_PATCH(deviceProperties.apiVersion));
+                    continue;
+                }
+
+                {
+                    //Evaluate device feature compatibility
+                    VkPhysicalDeviceFeatures deviceFeatures = {};
+                    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+                    bool featuresValid = true;
+
+                    for (size_t i = 0; i < sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32); i++) {
+                        VkBool32* a = ((VkBool32*)&requiredFeatures) + i;
+                        VkBool32* b = ((VkBool32*)&deviceFeatures) + i;
+
+                        if (*a == VK_TRUE) {
+                            if (*b != VK_TRUE) {
+                                featuresValid = false;
+                            }
+                        }
+                    }
+
+                    if (!featuresValid) {
+                        Logger::Log(eLogLevel::Warning, "Not all required physical device features were available!\n");
+                        continue;
+                    }
+                }
+
+                //Cache the physical device candidate
+                {
+                    //Convenience Lambda
+                    auto selectCandidate = [&]() {
+                        Logger::Log(eLogLevel::Info, "Device [%s](%s) is the current best candidate!\nVulkan API Version (%d.%d.%d)\tDriver Version (%d.%d.%d)\n", deviceProperties.deviceName, string_VkPhysicalDeviceType(deviceProperties.deviceType), VK_API_VERSION_MAJOR(deviceProperties.apiVersion), VK_API_VERSION_MINOR(deviceProperties.apiVersion), VK_API_VERSION_PATCH(deviceProperties.apiVersion), VK_API_VERSION_MAJOR(deviceProperties.driverVersion), VK_API_VERSION_MINOR(deviceProperties.driverVersion), VK_API_VERSION_PATCH(deviceProperties.driverVersion));
+
+                        deviceCandidate = device;
+                        candidateType = deviceProperties.deviceType;
+                        };
+
+                    //Only evaluate if there IS a candidate already present
+                    if (deviceCandidate != VK_NULL_HANDLE)
+                    {
+                        if (candidateType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+                        {
+                            selectCandidate();
+                        }
+                        else
+                        {
+                            selectCandidate();
+                        }
+                    }
+                    else
+                    {
+                        selectCandidate(); //This is the first candidate, so just select it anyway!
+                    }
+                }
+            }
+
+            //Complain if there were no supported devices. 
+            if (deviceCandidate == VK_NULL_HANDLE) {
+                Logger::Log(eLogLevel::Warning, "No physical device candidates were valid!\n");
+            }
+
+			physicalDevice = deviceCandidate;
+        }	
+
+        if (!physicalDevice)
+        {
+			Logger::Error(__FILE__, __LINE__, __PRETTY_FUNCTION__, "Failed to find a suitable GPU!\n");
+        }
+
+		return VK_SUCCESS;
+
+    }
     void Gpu::DestroyPhysicalDevice()
     {
     }
