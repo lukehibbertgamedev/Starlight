@@ -377,9 +377,14 @@ namespace Starlight
         accelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
         accelerationStructureFeatures.accelerationStructure = VK_TRUE;        
         
+        VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures = {};
+        rayQueryFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+        rayQueryFeatures.pNext = &accelerationStructureFeatures;
+        rayQueryFeatures.rayQuery = VK_TRUE;
+
         VkPhysicalDeviceRayTracingPipelineFeaturesKHR raytracingPipelineFeatures = {};
         raytracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
-        raytracingPipelineFeatures.pNext = &accelerationStructureFeatures;
+        raytracingPipelineFeatures.pNext = &rayQueryFeatures;
         raytracingPipelineFeatures.rayTracingPipeline = VK_TRUE;
 
         VkPhysicalDeviceVulkan12Features features12 = {};
