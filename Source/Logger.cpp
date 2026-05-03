@@ -7,6 +7,7 @@
 
 #if WIN32
 #include <windows.h>
+#include "../Include/Profiler.h"
 
 const std::map<Starlight::eLogLevel, int32_t> ColourMapping =
 {
@@ -23,6 +24,8 @@ namespace Starlight
 {
 	void Logger::Log(const eLogLevel severity, const char* format, ...)
 	{
+		StarlightZoneScoped;
+
 		SetConsoleColour(severity);
 
 		va_list args;
@@ -36,6 +39,8 @@ namespace Starlight
 
 	void Logger::Error(const char* file, uint16_t line, const char* function, const char* format, ...)
 	{
+		StarlightZoneScoped;
+
 		SetConsoleColour(eLogLevel::Error);
 
 		Output("[Error]\t");
@@ -57,6 +62,8 @@ namespace Starlight
 
 	void Logger::SetConsoleColour(const eLogLevel severity)
 	{
+		StarlightZoneScoped;
+
 		if (severity >= eLogLevel::MAX)
 		{
 			Starlight::Unreachable();
@@ -78,6 +85,8 @@ namespace Starlight
 
 	void Logger::Output(const char* format, va_list args)
 	{
+		StarlightZoneScoped;
+
 		if (format == nullptr)
 		{
 			return;
@@ -90,6 +99,8 @@ namespace Starlight
 
 	void Logger::Output(const char* format, ...)
 	{
+		StarlightZoneScoped;
+
 		va_list args;
 		va_start(args, format);
 		Output(format, args);

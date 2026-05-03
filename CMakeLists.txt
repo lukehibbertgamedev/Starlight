@@ -26,8 +26,8 @@ FetchContent_Declare(
     GIT_TAG v0.13.1
     GIT_SHALLOW TRUE
 )
-set(TRACY_ENABLE ${MIDORI_ENABLE_PROFILING})
-set(TRACY_ON_DEMAND ${MIDORI_ENABLE_PROFILING})
+set(TRACY_ENABLE ON)
+set(TRACY_ON_DEMAND ON)
 
 # GLM
 FetchContent_Declare(
@@ -89,7 +89,7 @@ add_executable(${PROJECT_NAME}
 "Source/main.cpp"
 "Include/Errors.h"
  "Include/Logger.h" "Source/Logger.cpp" "Include/Gpu.h" "Source/Gpu.cpp" "Include/Utility.h"
-${SRC})
+${SRC} "Include/Profiler.h")
 
 target_link_libraries(${PROJECT_NAME} 
     Vulkan::Vulkan

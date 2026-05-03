@@ -6,6 +6,7 @@
 
 #include <unordered_map>
 #include <vector>
+#include "../Include/Profiler.h"
 
 PFN_vkCreateDebugUtilsMessengerEXT  Starlight::Gpu::vkCreateDebugUtilsMessengerEXT = nullptr;
 PFN_vkDestroyDebugUtilsMessengerEXT Starlight::Gpu::vkDestroyDebugUtilsMessengerEXT = nullptr;
@@ -21,6 +22,8 @@ namespace Starlight
 {
     Gpu::Gpu()
     {
+        StarlightZoneScoped;
+
         instance = VK_NULL_HANDLE;
 		device = VK_NULL_HANDLE;
 		physicalDevice = VK_NULL_HANDLE;
@@ -33,6 +36,7 @@ namespace Starlight
 
     StarlightErr Starlight::Gpu::Init(GpuInfo* pGpuInfo)
     {
+        StarlightZoneScoped;
 		Starlight::Logger::Log(Starlight::eLogLevel::Info, "Gpu::Init\n");
 
         if (!pGpuInfo)
@@ -69,6 +73,8 @@ namespace Starlight
 
     StarlightErr Starlight::Gpu::Terminate()
     {
+        StarlightZoneScoped;
+
 		Logger::Log(Starlight::eLogLevel::Info, "Gpu::Terminate\n");
 
         if (pGpuInfo->enableValidationLayers)
@@ -83,6 +89,8 @@ namespace Starlight
 
     VkResult Gpu::CheckVkResult(const VkResult result, const char* msg)
     {
+        StarlightZoneScoped;
+
         if (result > VK_SUCCESS)
         {
 		    Logger::Log(Starlight::eLogLevel::Warning, string_VkResult(result), msg);
@@ -98,6 +106,8 @@ namespace Starlight
 
     VkResult Gpu::LoadVulkanFunctions()
     {
+        StarlightZoneScoped;
+
         if (!instance)
         {
 			Logger::Error(__FILE__, __LINE__, __PRETTY_FUNCTION__, "Cannot load Vulkan functions, instance is null\n");
@@ -123,6 +133,8 @@ namespace Starlight
 
     VkResult Gpu::CreateInstance(const GpuInfo* pGpuInfo)
     {
+        StarlightZoneScoped;
+
 		std::vector<const char*> instanceLayers;
 		std::vector<const char*> instanceExtensions;
 
@@ -168,6 +180,8 @@ namespace Starlight
 
     void Gpu::DestroyInstance()
     {
+        StarlightZoneScoped;
+
         if (!instance || !allocatorCallback)
         {
             Logger::Error(__FILE__, __LINE__, __PRETTY_FUNCTION__, "Cannot destroy instance, instance or allocator callback is null\n");
@@ -180,6 +194,8 @@ namespace Starlight
 
     VkResult Gpu::SelectPhysicalDevice()
     {
+        StarlightZoneScoped;
+
 		uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
@@ -283,28 +299,40 @@ namespace Starlight
     }
     void Gpu::DestroyPhysicalDevice()
     {
+        StarlightZoneScoped;
+
     }
 
     VkResult Gpu::CreateLogicalDevice()
     {
+        StarlightZoneScoped;
+
         return VkResult();
     }
 
     void Gpu::DestroyLogicalDevice()
     {
+        StarlightZoneScoped;
+
     }
 
     VkResult Gpu::CreateVmaAllocator()
     {
+        StarlightZoneScoped;
+
         return VkResult();
     }
 
     void Gpu::DestroyVmaAllocator()
     {
+        StarlightZoneScoped;
+
     }
 
     VkResult Gpu::CreateDebugMessenger()
     {
+        StarlightZoneScoped;
+
         VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
         debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
         debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
@@ -317,6 +345,8 @@ namespace Starlight
 
     void Gpu::DestroyDebugMessenger()
     {
+        StarlightZoneScoped;
+
 		if (!instance || !debugMessenger)
         {
 			Logger::Error(__FILE__, __LINE__, __PRETTY_FUNCTION__, "Cannot destroy debug messenger, instance or messenger is null\n");
@@ -329,11 +359,15 @@ namespace Starlight
 
     VkResult Gpu::SetDebugObjectName(const uint64_t handle, const VkObjectType type, const std::string& name) const
     {
+        StarlightZoneScoped;
+
         return VkResult();
     }
 
     VKAPI_ATTR VkBool32 VKAPI_CALL Gpu::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
     {
+        StarlightZoneScoped;
+
         Logger::Log(Starlight::eLogLevel::Info, "Debug callback: %s\n", pCallbackData->pMessage);
         return VK_FALSE;
     }
