@@ -80,11 +80,16 @@ target_link_libraries(imgui PRIVATE
 target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR})
 
 
+if (WIN32)
+    set(SRC ${SRC} "${CMAKE_CURRENT_SOURCE_DIR}/Assets/Icon/Resources.rc")
+endif()
+
 ## Exe
 add_executable(${PROJECT_NAME}
 "Source/main.cpp"
 "Include/Errors.h"
- "Include/Logger.h" "Source/Logger.cpp" "Include/Gpu.h" "Source/Gpu.cpp" "Include/Utility.h")
+ "Include/Logger.h" "Source/Logger.cpp" "Include/Gpu.h" "Source/Gpu.cpp" "Include/Utility.h"
+${SRC})
 
 target_link_libraries(${PROJECT_NAME} 
     Vulkan::Vulkan
