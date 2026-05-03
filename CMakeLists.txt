@@ -53,6 +53,12 @@ FetchContent_Declare(
 # Disable VMA sample builds by default
 set(VMA_BUILD_SAMPLES OFF)
 
+FetchContent_Declare(
+    stb
+    GIT_REPOSITORY https://github.com/nothings/stb
+    GIT_SHALLOW TRUE
+)
+
 # ImGui
 FetchContent_Declare(
     imgui
@@ -61,7 +67,7 @@ FetchContent_Declare(
 	GIT_SHALLOW TRUE
 )
 
-FetchContent_MakeAvailable(tracy glm glfw vma imgui)
+FetchContent_MakeAvailable(tracy glm glfw vma imgui stb)
 
 ## ImGui as static lib
 add_library(imgui 
@@ -89,7 +95,9 @@ add_executable(${PROJECT_NAME}
 "Source/main.cpp"
 "Include/Errors.h"
  "Include/Logger.h" "Source/Logger.cpp" "Include/Gpu.h" "Source/Gpu.cpp" "Include/Utility.h"
-${SRC} "Include/Profiler.h" "Include/Memory.h")
+${SRC} "Include/Profiler.h" "Include/Memory.h" "Include/Window.h" "Source/Window.cpp")
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${stb_SOURCE_DIR})
 
 target_link_libraries(${PROJECT_NAME} 
     Vulkan::Vulkan
