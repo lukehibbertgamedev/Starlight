@@ -6,6 +6,8 @@
 
 #include <unordered_map>
 #include <vector>
+
+#include "../Include/Window.h"
 #include "../Include/Profiler.h"
 
 PFN_vkCreateDebugUtilsMessengerEXT  Starlight::Gpu::vkCreateDebugUtilsMessengerEXT = nullptr;
@@ -67,6 +69,8 @@ namespace Starlight
 		err = (StarlightErr)CheckVkResult(SelectPhysicalDevice(), "SelectPhysicalDevice");
 		Logger::Log(Starlight::eLogLevel::Info, "Selected physical device\n");
 
+        err = (StarlightErr)CheckVkResult(CreateLogicalDevice(), "CreateLogicalDevice");
+        Logger::Log(Starlight::eLogLevel::Info, "Created logical device\n");
 
         return StarlightErr::Success;
     }
@@ -151,6 +155,19 @@ namespace Starlight
             instanceLayers.push_back("VK_LAYER_KHRONOS_validation");
             instanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
+
+#if WIN32
+
+        // GLFW required extensions
+        uint32_t glfwExtensionCount = 0u;
+        const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+        for (size_t i = 0; i < glfwExtensionCount; ++i)
+        {
+            instanceExtensions.push_back(glfwExtensions[i]);
+        }
+
+#endif
 
 		VkInstanceCreateInfo createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -307,7 +324,85 @@ namespace Starlight
     {
         StarlightZoneScoped;
 
-        return VkResult();
+		VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures = {};
+		descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+		descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+		descriptorIndexingFeatures.shaderStorageBufferArrayNonUniformIndexing = VK_TRUE;
+
+		std::vector<const char*> deviceExtensions = 
+        { 
+            VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME, 
+            VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, 
+            VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME, 
+            VK_KHR_SPIRV_1_4_EXTENSION_NAME, 
+            VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+            VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+            VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
+            VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+        };
+
+        // TODO: Expose 1 graphics queue for now.
+
+        auto FindGraphicsQueueFamilyIndex = [](VkPhysicalDevice physicalDevice) -> uint32_t
+            {
+                uint32_t propCount = 0u;
+                vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &propCount, nullptr);
+
+                std::vector<VkQueueFamilyProperties> families(propCount);
+                vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &propCount, families.data());
+
+                int i = 0;
+                for (const auto& queueFamily : families)
+                {
+                    if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT && queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
+                    {
+                        return i;
+                    }
+
+                    ++i;
+                }
+            };
+
+        float queuePriorities = 1.0f;
+
+        VkDeviceQueueCreateInfo queueCreateInfo = {};
+        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueCount = 1u;
+        queueCreateInfo.queueFamilyIndex = FindGraphicsQueueFamilyIndex(physicalDevice);
+        queueCreateInfo.pQueuePriorities = &queuePriorities;
+
+        // Backwards feature pNext chain.
+
+        VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures = {};
+        accelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+        accelerationStructureFeatures.accelerationStructure = VK_TRUE;        
+        
+        VkPhysicalDeviceRayTracingPipelineFeaturesKHR raytracingPipelineFeatures = {};
+        raytracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+        raytracingPipelineFeatures.pNext = &accelerationStructureFeatures;
+        raytracingPipelineFeatures.rayTracingPipeline = VK_TRUE;
+
+        VkPhysicalDeviceVulkan12Features features12 = {};
+        features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+        features12.pNext = &raytracingPipelineFeatures;
+        features12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+        features12.shaderUniformBufferArrayNonUniformIndexing = VK_TRUE;
+        features12.shaderStorageBufferArrayNonUniformIndexing = VK_TRUE;
+        features12.bufferDeviceAddress = VK_TRUE;
+        features12.descriptorIndexing = VK_TRUE;
+        features12.bufferDeviceAddress = VK_TRUE;
+
+        VkPhysicalDeviceFeatures2 deviceFeatures = {};
+        deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures.pNext = &features12;
+
+		VkDeviceCreateInfo createInfo = {};
+		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;        
+        createInfo.pNext = &deviceFeatures;
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+		createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+
+		return CheckVkResult(vkCreateDevice(physicalDevice, &createInfo, allocatorCallback, &device), "vkCreateDevice");
     }
 
     void Gpu::DestroyLogicalDevice()
